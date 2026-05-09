@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: ms-chatbot
+  datasource:
+    url: jdbc:mysql://localhost:3306/chatbot_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+server:
+  port: 8085
+
+chatbot:
+  evolution:
+    base-url: ${EVOLUTION_BASE_URL:http://localhost:8080}
+    global-api-key: ${EVOLUTION_GLOBAL_API_KEY:}
+
+logging:
+  level:
+    ms.chatbot.dias: DEBUG
+    org.hibernate.SQL: WARN
