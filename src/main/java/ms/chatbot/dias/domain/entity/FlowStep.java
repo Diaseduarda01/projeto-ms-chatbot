@@ -52,7 +52,7 @@ public class FlowStep {
     private ActionType actionType;
 
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "flow_step_id")
+    @JoinColumn(name = "flow_step_id", nullable = false)
     @OrderBy("sortOrder ASC")
     @Builder.Default
     private List<FlowTransition> transitions = new ArrayList<>();

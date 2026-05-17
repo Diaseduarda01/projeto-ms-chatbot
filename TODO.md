@@ -46,7 +46,7 @@ Sem isso o frontend precisa fazer polling, o que não escala.
 - [x] Configurar STOMP broker (`/topic/sessions/{sessionId}`) com SockJS
 - [x] Publicar evento a cada mensagem nova (INBOUND e OUTBOUND) no tópico da sessão
 - [x] Publicar no tópico global `/topic/inbox` quando nova sessão iniciar ou status mudar
-- [ ] Autenticação no WebSocket (verificar `X-Internal-Key` no handshake ou JWT do ERP)
+- [x] Autenticação no WebSocket (verificar `X-Internal-Key` no handshake STOMP via `StompAuthChannelInterceptor`)
 
 ---
 

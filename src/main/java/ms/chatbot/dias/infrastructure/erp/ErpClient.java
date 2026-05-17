@@ -2,6 +2,7 @@ package ms.chatbot.dias.infrastructure.erp;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import ms.chatbot.dias.infrastructure.erp.dto.AgendamentoItem;
 import ms.chatbot.dias.infrastructure.erp.dto.AgendamentoResult;
 import ms.chatbot.dias.infrastructure.erp.dto.ServicoItem;
 import ms.chatbot.dias.infrastructure.erp.dto.SlotItem;
@@ -23,7 +24,7 @@ public class ErpClient {
     private final ErpProperties properties;
 
     public List<ServicoItem> listarServicos(String empresaId) {
-        String url = properties.getBaseUrl() + "/api/servicos?empresaId=" + empresaId;
+        String url = properties.getBaseUrl() + "/chatbot/servicos?empresaId=" + empresaId;
         log.debug("ERP listarServicos: {}", url);
         return restClient.get()
             .uri(url)
@@ -33,7 +34,7 @@ public class ErpClient {
     }
 
     public String buscarOuCriarCliente(String empresaId, String nome, String telefone, String email) {
-        String url = properties.getBaseUrl() + "/api/clientes/buscar-ou-criar";
+        String url = properties.getBaseUrl() + "/chatbot/clientes";
         Map<String, Object> body = new HashMap<>();
         body.put("empresaId", empresaId);
         body.put("nome", nome);
@@ -56,7 +57,7 @@ public class ErpClient {
 
     public List<SlotItem> listarDisponibilidade(String empresaId, String servicoId, String data) {
         String url = properties.getBaseUrl()
-            + "/api/disponibilidade?empresaId=" + empresaId
+            + "/chatbot/disponibilidade?empresaId=" + empresaId
             + "&servicoId=" + servicoId
             + "&data=" + data;
         log.debug("ERP listarDisponibilidade: {}", url);
@@ -69,7 +70,7 @@ public class ErpClient {
 
     public AgendamentoResult criarAgendamento(String empresaId, String clienteId,
                                                String servicoId, String data, String horaInicio) {
-        String url = properties.getBaseUrl() + "/api/agendamentos";
+        String url = properties.getBaseUrl() + "/chatbot/agendamentos";
         Map<String, Object> body = Map.of(
             "empresaId", empresaId,
             "clienteId", clienteId,
@@ -85,5 +86,27 @@ public class ErpClient {
             .body(body)
             .retrieve()
             .body(AgendamentoResult.class);
+    }
+
+    public List<AgendamentoItem> listarAgendamentos(String empresaId, String clienteId) {
+        String url = properties.getBaseUrl()
+            + "/chatbot/agendamentos?empresaId=" + empresaId
+            + "&clienteId=" + clienteId;
+        log.debug("ERP listarAgendamentos: cliente={}", clienteId);
+        return restClient.get()
+            .uri(url)
+            .header("X-Internal-Key", properties.getInternalApiKey())
+            .retrieve()
+            .body(new ParameterizedTypeReference<>() {});
+    }
+
+    public void cancelarAgendamento(String agendamentoId) {
+        String url = properties.getBaseUrl() + "/chatbot/agendamentos/" + agendamentoId + "/cancelar";
+        log.debug("ERP cancelarAgendamento: {}", agendamentoId);
+        restClient.patch()
+            .uri(url)
+            .header("X-Internal-Key", properties.getInternalApiKey())
+            .retrieve()
+            .toBodilessEntity();
     }
 }

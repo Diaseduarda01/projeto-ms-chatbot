@@ -149,9 +149,8 @@ public class FlowEngineService {
             return fromTransition.get();
         }
 
-        // Menu dinâmico (sem transições): aceita qualquer número positivo → defaultNextStepKey
-        if (step.getTransitions().isEmpty()
-                && step.getDefaultNextStepKey() != null
+        // Menu dinâmico ou misto: aceita qualquer número positivo sem transição explícita → defaultNextStepKey
+        if (step.getDefaultNextStepKey() != null
                 && step.getSessionDataKey() != null
                 && isPositiveInteger(normalized)) {
             return step.getDefaultNextStepKey();

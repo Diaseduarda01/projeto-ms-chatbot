@@ -20,4 +20,18 @@ public class BaileysGateway implements MessagingGateway {
             text
         );
     }
+
+    @Override
+    public void sendMedia(String phoneNumber, String mediaType, String media,
+                          String caption, String fileName, Company company) {
+        evolutionClient.sendMedia(
+            company.getEvolutionInstanceName(),
+            company.getEvolutionApiKey(),
+            phoneNumber,
+            mediaType,
+            media,
+            caption,
+            fileName
+        );
+    }
 }

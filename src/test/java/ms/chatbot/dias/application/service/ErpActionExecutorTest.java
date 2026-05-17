@@ -7,6 +7,7 @@ import ms.chatbot.dias.domain.enums.ActionType;
 import ms.chatbot.dias.domain.enums.ChannelType;
 import ms.chatbot.dias.domain.enums.StepType;
 import ms.chatbot.dias.infrastructure.erp.ErpClient;
+import ms.chatbot.dias.infrastructure.erp.dto.AgendamentoItem;
 import ms.chatbot.dias.infrastructure.erp.dto.AgendamentoResult;
 import ms.chatbot.dias.infrastructure.erp.dto.ServicoItem;
 import ms.chatbot.dias.infrastructure.erp.dto.SlotItem;
@@ -63,14 +64,14 @@ class ErpActionExecutorTest {
         assertThat(result).isTrue();
         assertThat(session.getData("servico_id_1")).isEqualTo("id-corte");
         assertThat(session.getData("servico_id_2")).isEqualTo("id-barba");
-        assertThat(session.getData("servicos_menu")).contains("1. Corte");
-        assertThat(session.getData("servicos_menu")).contains("2. Barba");
+        assertThat(session.getData("servicos")).contains("1. Corte");
+        assertThat(session.getData("servicos")).contains("2. Barba");
         assertThat(session.getData("servicos_total")).isEqualTo("2");
     }
 
     @Test
     void execute_buscar_ou_criar_cliente_popula_cliente_id_na_sessao() {
-        session.storeData("nome", "João Silva");
+        session.storeData("cliente_nome", "João Silva");
         when(erpClient.buscarOuCriarCliente("empresa-123", "João Silva", "5511999999999", null))
             .thenReturn("cliente-uuid-456");
 
@@ -97,8 +98,8 @@ class ErpActionExecutorTest {
         assertThat(result).isTrue();
         assertThat(session.getData("slot_horario_1")).isEqualTo("09:00");
         assertThat(session.getData("slot_horario_2")).isEqualTo("14:00");
-        assertThat(session.getData("slots_menu")).contains("1. 09:00");
-        assertThat(session.getData("slots_menu")).contains("2. 14:00");
+        assertThat(session.getData("slots")).contains("1. 09:00");
+        assertThat(session.getData("slots")).contains("2. 14:00");
     }
 
     @Test
@@ -167,10 +168,56 @@ class ErpActionExecutorTest {
 
         assertThat(result).isTrue();
         assertThat(session.getData("endereco")).isEqualTo("Rua das Flores, 123 - Centro");
-        assertThat(session.getData("horario")).isEqualTo("Seg-Sáb 9h-19h");
+        assertThat(session.getData("horario_funcionamento")).isEqualTo("Seg-Sáb 9h-19h");
         assertThat(session.getData("telefone_contato")).isEqualTo("(11) 99999-0000");
         assertThat(session.getData("nome_empresa")).isEqualTo("Barbearia Top");
         verifyNoInteractions(erpClient);
+    }
+
+    @Test
+    void execute_listar_agendamentos_popula_menu_e_ids_na_sessao() {
+        session.storeData("cliente_id", "cliente-uuid-456");
+        when(erpClient.listarAgendamentos("empresa-123", "cliente-uuid-456")).thenReturn(List.of(
+            new AgendamentoItem("ag-id-1", "2024-06-20", "09:00", "Corte", "AGENDADO"),
+            new AgendamentoItem("ag-id-2", "2024-06-25", "14:00", "Barba", "AGENDADO")
+        ));
+
+        FlowStep step = buildActionStep(ActionType.LISTAR_AGENDAMENTOS);
+        boolean result = executor.execute(step, session, company);
+
+        assertThat(result).isTrue();
+        assertThat(session.getData("agendamento_id_1")).isEqualTo("ag-id-1");
+        assertThat(session.getData("agendamento_id_2")).isEqualTo("ag-id-2");
+        assertThat(session.getData("agendamentos_menu")).contains("1. 2024-06-20");
+        assertThat(session.getData("agendamentos_menu")).contains("2. 2024-06-25");
+        assertThat(session.getData("agendamentos_total")).isEqualTo("2");
+    }
+
+    @Test
+    void execute_cancelar_agendamento_por_opcao_na_sessao() {
+        session.storeData("agendamento_opcao", "2");
+        session.storeData("agendamento_id_2", "ag-id-2");
+        doNothing().when(erpClient).cancelarAgendamento("ag-id-2");
+
+        FlowStep step = buildActionStep(ActionType.CANCELAR_AGENDAMENTO);
+        boolean result = executor.execute(step, session, company);
+
+        assertThat(result).isTrue();
+        assertThat(session.getData("cancelamento_confirmado")).isEqualTo("Agendamento cancelado com sucesso.");
+        verify(erpClient).cancelarAgendamento("ag-id-2");
+    }
+
+    @Test
+    void execute_cancelar_agendamento_por_id_direto_na_sessao() {
+        session.storeData("agendamento_id", "ag-id-direto");
+        doNothing().when(erpClient).cancelarAgendamento("ag-id-direto");
+
+        FlowStep step = buildActionStep(ActionType.CANCELAR_AGENDAMENTO);
+        boolean result = executor.execute(step, session, company);
+
+        assertThat(result).isTrue();
+        assertThat(session.getData("cancelamento_confirmado")).isEqualTo("Agendamento cancelado com sucesso.");
+        verify(erpClient).cancelarAgendamento("ag-id-direto");
     }
 
     @Test

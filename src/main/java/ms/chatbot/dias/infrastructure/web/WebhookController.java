@@ -23,6 +23,7 @@ public class WebhookController {
     private final BaileysPayloadNormalizer baileysNormalizer;
     private final BusinessPayloadNormalizer businessNormalizer;
     private final ObjectMapper objectMapper;
+    private final WebhookRateLimiter rateLimiter;
 
     @PostMapping("/{instanceName}")
     public ResponseEntity<Void> receive(
@@ -41,7 +42,13 @@ public class WebhookController {
             }
 
             Optional<IncomingMessage> message = tryNormalize(payload, instanceName);
-            message.ifPresent(processMessageUseCase::execute);
+            if (message.isPresent()) {
+                if (rateLimiter.allow(message.get().senderPhone())) {
+                    processMessageUseCase.execute(message.get());
+                } else {
+                    log.debug("Rate limit: mensagem ignorada de {} | instância: {}", message.get().senderPhone(), instanceName);
+                }
+            }
 
         } catch (Exception e) {
             log.error("Erro ao processar webhook da instância {}: {}", instanceName, e.getMessage(), e);

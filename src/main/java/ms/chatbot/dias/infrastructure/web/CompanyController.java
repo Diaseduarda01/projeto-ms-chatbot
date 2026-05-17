@@ -9,10 +9,13 @@ import ms.chatbot.dias.domain.entity.FlowTransition;
 import ms.chatbot.dias.domain.enums.ChannelType;
 import ms.chatbot.dias.domain.port.CompanyRepository;
 import ms.chatbot.dias.domain.port.FlowStepRepository;
+import ms.chatbot.dias.infrastructure.evolution.EvolutionHttpClient;
 import ms.chatbot.dias.infrastructure.web.dto.CompanyRequest;
+import ms.chatbot.dias.infrastructure.web.dto.FlowStepExport;
 import ms.chatbot.dias.infrastructure.web.dto.FlowStepRequest;
 import ms.chatbot.dias.infrastructure.web.dto.UpdateCompanyRequest;
 import ms.chatbot.dias.infrastructure.web.dto.UpdateFlowStepRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -30,6 +33,10 @@ public class CompanyController {
     private final CompanyRepository companyRepository;
     private final FlowStepRepository flowStepRepository;
     private final FlowBuilderService flowBuilderService;
+    private final EvolutionHttpClient evolutionHttpClient;
+
+    @Value("${chatbot.webhook-base-url:http://dias-chatbot:8085}")
+    private String webhookBaseUrl;
 
     @PostMapping
     public ResponseEntity<Company> create(@RequestBody @Valid CompanyRequest request) {
@@ -45,7 +52,16 @@ public class CompanyController {
             .telefoneContato(request.telefoneContato())
             .build();
 
-        return ResponseEntity.ok(companyRepository.save(company));
+        Company saved = companyRepository.save(company);
+
+        evolutionHttpClient.setWebhook(
+            saved.getEvolutionInstanceName(),
+            saved.getEvolutionApiKey(),
+            webhookBaseUrl + "/webhook/" + saved.getEvolutionInstanceName(),
+            List.of("MESSAGES_UPSERT", "QRCODE_UPDATED", "CONNECTION_UPDATE")
+        );
+
+        return ResponseEntity.ok(saved);
     }
 
     @GetMapping("/by-erp/{erpEmpresaId}")
@@ -117,6 +133,47 @@ public class CompanyController {
     public ResponseEntity<List<FlowStep>> listSteps(@PathVariable UUID companyId) {
         findCompanyOrThrow(companyId);
         return ResponseEntity.ok(flowStepRepository.findAllByCompanyId(companyId));
+    }
+
+    @GetMapping("/{companyId}/steps/export")
+    public ResponseEntity<List<FlowStepExport>> exportSteps(@PathVariable UUID companyId) {
+        findCompanyOrThrow(companyId);
+        List<FlowStepExport> exported = flowStepRepository.findAllByCompanyId(companyId)
+            .stream().map(FlowStepExport::from).toList();
+        return ResponseEntity.ok(exported);
+    }
+
+    @PostMapping("/{companyId}/steps/import")
+    public ResponseEntity<List<FlowStep>> importSteps(
+            @PathVariable UUID companyId,
+            @RequestBody List<FlowStepExport> steps) {
+
+        findCompanyOrThrow(companyId);
+        flowStepRepository.deleteAllByCompanyId(companyId);
+
+        List<FlowStep> created = steps.stream().map(s -> {
+            List<FlowTransition> transitions = s.transitions() == null ? List.of() :
+                s.transitions().stream()
+                    .map(t -> FlowTransition.builder()
+                        .trigger(t.trigger())
+                        .nextStepKey(t.nextStepKey())
+                        .sortOrder(t.sortOrder())
+                        .build())
+                    .toList();
+            return FlowStep.builder()
+                .companyId(companyId)
+                .stepKey(s.stepKey())
+                .type(s.type())
+                .messageTemplate(s.messageTemplate())
+                .inputType(s.inputType())
+                .sessionDataKey(s.sessionDataKey())
+                .defaultNextStepKey(s.defaultNextStepKey())
+                .actionType(s.actionType())
+                .transitions(transitions)
+                .build();
+        }).toList();
+
+        return ResponseEntity.ok(flowStepRepository.saveAll(created));
     }
 
     @PutMapping("/{companyId}/steps/{stepId}")

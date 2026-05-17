@@ -3,6 +3,7 @@ package ms.chatbot.dias.infrastructure.web;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import ms.chatbot.dias.application.service.ChatEventPublisher;
+import ms.chatbot.dias.application.usecase.SendManualMediaUseCase;
 import ms.chatbot.dias.application.usecase.SendManualMessageUseCase;
 import ms.chatbot.dias.domain.entity.Session;
 import ms.chatbot.dias.domain.exception.SessionNotInHandoffException;
@@ -12,6 +13,7 @@ import ms.chatbot.dias.domain.port.SessionRepository;
 import ms.chatbot.dias.infrastructure.web.dto.EnviarMensagemRequest;
 import ms.chatbot.dias.infrastructure.web.dto.InboxEvent;
 import ms.chatbot.dias.infrastructure.web.dto.MessageResponse;
+import ms.chatbot.dias.infrastructure.web.dto.SendMediaRequest;
 import ms.chatbot.dias.infrastructure.web.dto.SessionSummaryResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,6 +34,7 @@ public class SessionController {
     private final SessionRepository sessionRepository;
     private final MessageRepository messageRepository;
     private final SendManualMessageUseCase sendManualMessageUseCase;
+    private final SendManualMediaUseCase sendManualMediaUseCase;
     private final ChatEventPublisher eventPublisher;
 
     @GetMapping
@@ -72,6 +75,22 @@ public class SessionController {
             @RequestBody @Valid EnviarMensagemRequest request) {
         try {
             sendManualMessageUseCase.execute(sessionId, request.texto());
+        } catch (SessionNotFoundException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        } catch (SessionNotInHandoffException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{sessionId}/midia")
+    public ResponseEntity<Void> enviarMidia(
+            @PathVariable UUID sessionId,
+            @RequestBody @Valid SendMediaRequest request) {
+        try {
+            sendManualMediaUseCase.execute(
+                sessionId, request.mediaType(), request.media(),
+                request.caption(), request.fileName());
         } catch (SessionNotFoundException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (SessionNotInHandoffException e) {

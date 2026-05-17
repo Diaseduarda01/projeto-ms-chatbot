@@ -40,4 +40,14 @@ public class FlowStepJpaAdapter implements FlowStepRepository {
     public void deleteById(UUID id) {
         jpa.deleteById(id);
     }
+
+    @Override
+    public List<FlowStep> saveAll(List<FlowStep> steps) {
+        return jpa.saveAll(steps);
+    }
+
+    @Override
+    public void deleteAllByCompanyId(UUID companyId) {
+        jpa.deleteAllByCompanyId(companyId);
+    }
 }

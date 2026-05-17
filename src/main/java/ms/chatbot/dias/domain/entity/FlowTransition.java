@@ -17,10 +17,10 @@ public class FlowTransition {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "flow_step_id", nullable = false)
+    @Column(name = "flow_step_id", nullable = false, insertable = false, updatable = false)
     private UUID flowStepId;
 
-    @Column(nullable = false)
+    @Column(name = "`trigger`", nullable = false)
     private String trigger;
 
     @Column(name = "next_step_key", nullable = false)

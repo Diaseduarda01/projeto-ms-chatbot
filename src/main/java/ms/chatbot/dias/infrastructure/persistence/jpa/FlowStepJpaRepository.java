@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface FlowStepJpaRepository extends JpaRepository<FlowStep, UUID> {
     Optional<FlowStep> findByCompanyIdAndStepKey(UUID companyId, String stepKey);
     List<FlowStep> findAllByCompanyId(UUID companyId);
+    void deleteAllByCompanyId(UUID companyId);
 }

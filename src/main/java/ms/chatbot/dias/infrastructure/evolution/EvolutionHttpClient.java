@@ -185,13 +185,15 @@ public class EvolutionHttpClient {
                                               String webhookUrl, List<String> events) {
         String url = properties.getBaseUrl() + "/webhook/set/" + instanceName;
         try {
-            var body = Map.of(
+            // Evolution API v1.4 expects data nested under "webhook" key
+            var webhookBody = Map.of(
                 "url", webhookUrl,
                 "enabled", true,
-                "webhookByEvents", false,
-                "webhookBase64", false,
+                "byEvents", false,
+                "base64", false,
                 "events", events
             );
+            var body = Map.of("webhook", webhookBody);
             restClient.post()
                 .uri(url)
                 .header("apikey", resolveApiKey(apiKey))
@@ -248,6 +250,187 @@ public class EvolutionHttpClient {
         }
 
         log.error("Falha ao enviar mensagem para {} após {} tentativas", phoneNumber, maxRetries);
+    }
+
+    public boolean checkNumber(String instanceName, String apiKey, String number) {
+        String url = properties.getBaseUrl() + "/chat/whatsappNumbers/" + instanceName;
+        try {
+            var body = Map.of("numbers", List.of(sanitizeNumber(number)));
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> response = restClient.post()
+                .uri(url)
+                .header("apikey", resolveApiKey(apiKey))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body)
+                .retrieve()
+                .body(List.class);
+            if (response == null || response.isEmpty()) return false;
+            return Boolean.TRUE.equals(response.get(0).get("numberExists"));
+        } catch (Exception e) {
+            log.warn("Erro ao verificar número {}: {}", number, e.getMessage());
+            return false;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getProfile(String instanceName, String apiKey, String number) {
+        String url = properties.getBaseUrl() + "/chat/fetchProfile/" + instanceName;
+        try {
+            var body = Map.of("number", sanitizeNumber(number));
+            Map<String, Object> response = restClient.post()
+                .uri(url)
+                .header("apikey", resolveApiKey(apiKey))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body)
+                .retrieve()
+                .body(Map.class);
+            return response != null ? response : Map.of();
+        } catch (Exception e) {
+            log.warn("Erro ao buscar perfil da instância {}: {}", instanceName, e.getMessage());
+            return Map.of();
+        }
+    }
+
+    public void updateProfileName(String instanceName, String apiKey, String name) {
+        String url = properties.getBaseUrl() + "/chat/updateProfileName/" + instanceName;
+        try {
+            restClient.post()
+                .uri(url)
+                .header("apikey", resolveApiKey(apiKey))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("name", name))
+                .retrieve()
+                .toBodilessEntity();
+        } catch (Exception e) {
+            log.warn("Erro ao atualizar nome do perfil {}: {}", instanceName, e.getMessage());
+        }
+    }
+
+    public void updateProfileStatus(String instanceName, String apiKey, String status) {
+        String url = properties.getBaseUrl() + "/chat/updateProfileStatus/" + instanceName;
+        try {
+            restClient.post()
+                .uri(url)
+                .header("apikey", resolveApiKey(apiKey))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("status", status))
+                .retrieve()
+                .toBodilessEntity();
+        } catch (Exception e) {
+            log.warn("Erro ao atualizar status do perfil {}: {}", instanceName, e.getMessage());
+        }
+    }
+
+    public void updateProfilePicture(String instanceName, String apiKey, String pictureUrl) {
+        String url = properties.getBaseUrl() + "/chat/updateProfilePicture/" + instanceName;
+        try {
+            restClient.put()
+                .uri(url)
+                .header("apikey", resolveApiKey(apiKey))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("picture", pictureUrl))
+                .retrieve()
+                .toBodilessEntity();
+        } catch (Exception e) {
+            log.warn("Erro ao atualizar foto do perfil {}: {}", instanceName, e.getMessage());
+        }
+    }
+
+    public void sendMedia(String instanceName, String apiKey, String phoneNumber,
+                          String mediaType, String media, String caption, String fileName) {
+        String url = properties.getBaseUrl() + "/message/sendMedia/" + instanceName;
+        var mediaMessage = new java.util.LinkedHashMap<String, Object>();
+        mediaMessage.put("mediatype", mediaType);
+        mediaMessage.put("media", media);
+        if (caption != null && !caption.isBlank()) mediaMessage.put("caption", caption);
+        if (fileName != null && !fileName.isBlank()) mediaMessage.put("fileName", fileName);
+        var body = Map.of(
+            "number", sanitizeNumber(phoneNumber),
+            "options", Map.of("delay", 1200, "presence", "composing"),
+            "mediaMessage", mediaMessage
+        );
+        try {
+            restClient.post()
+                .uri(url)
+                .header("apikey", resolveApiKey(apiKey))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body)
+                .retrieve()
+                .toBodilessEntity();
+        } catch (Exception e) {
+            log.warn("Erro ao enviar mídia para {}: {}", phoneNumber, e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> findChats(String instanceName, String apiKey) {
+        String url = properties.getBaseUrl() + "/chat/findChats/" + instanceName;
+        try {
+            List<Map<String, Object>> response = restClient.get()
+                .uri(url)
+                .header("apikey", resolveApiKey(apiKey))
+                .retrieve()
+                .body(List.class);
+            return response != null ? response : List.of();
+        } catch (Exception e) {
+            log.warn("Erro ao buscar chats da instância {}: {}", instanceName, e.getMessage());
+            return List.of();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> findContacts(String instanceName, String apiKey, String query) {
+        String url = properties.getBaseUrl() + "/chat/findContacts/" + instanceName;
+        try {
+            var where = new java.util.LinkedHashMap<String, Object>();
+            if (query != null && !query.isBlank()) where.put("pushName", query);
+            List<Map<String, Object>> response = restClient.post()
+                .uri(url)
+                .header("apikey", resolveApiKey(apiKey))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("where", where))
+                .retrieve()
+                .body(List.class);
+            return response != null ? response : List.of();
+        } catch (Exception e) {
+            log.warn("Erro ao buscar contatos da instância {}: {}", instanceName, e.getMessage());
+            return List.of();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getPrivacy(String instanceName, String apiKey) {
+        String url = properties.getBaseUrl() + "/chat/fetchPrivacySettings/" + instanceName;
+        try {
+            Map<String, Object> response = restClient.get()
+                .uri(url)
+                .header("apikey", resolveApiKey(apiKey))
+                .retrieve()
+                .body(Map.class);
+            return response != null ? response : Map.of();
+        } catch (Exception e) {
+            log.warn("Erro ao buscar privacidade da instância {}: {}", instanceName, e.getMessage());
+            return Map.of();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> setPrivacy(String instanceName, String apiKey,
+                                           Map<String, String> settings) {
+        String url = properties.getBaseUrl() + "/chat/updatePrivacySettings/" + instanceName;
+        try {
+            Map<String, Object> response = restClient.put()
+                .uri(url)
+                .header("apikey", resolveApiKey(apiKey))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("privacySettings", settings))
+                .retrieve()
+                .body(Map.class);
+            return response != null ? response : Map.of();
+        } catch (Exception e) {
+            log.warn("Erro ao atualizar privacidade da instância {}: {}", instanceName, e.getMessage());
+            return Map.of();
+        }
     }
 
     private String resolveApiKey(String instanceApiKey) {

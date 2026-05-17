@@ -22,7 +22,7 @@ chatbot:
   evolution:
     base-url: ${EVOLUTION_BASE_URL:http://localhost:8080}
     global-api-key: ${EVOLUTION_GLOBAL_API_KEY:}
-  internal-api-key: ${INTERNAL_API_KEY:changeme}
+  internal-api-key: ${INTERNAL_API_KEY:dias-internal-key-dev-32-chars!!}
   webhook-base-url: ${CHATBOT_WEBHOOK_BASE_URL:http://dias-chatbot:8085}
 
 erp:

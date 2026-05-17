@@ -231,7 +231,7 @@ class FlowEngineServiceTest {
             .defaultNextStepKey("ESCOLHA_SERVICO")
             .transitions(List.of())
             .build();
-        FlowStep resultStep = buildStep("ESCOLHA_SERVICO", StepType.MENU, "{{servicos_menu}}");
+        FlowStep resultStep = buildStep("ESCOLHA_SERVICO", StepType.MENU, "{{servicos}}");
 
         when(flowStepRepository.findByCompanyIdAndStepKey(company.getId(), "MAIN_MENU"))
             .thenReturn(Optional.of(menuStep));
@@ -283,7 +283,7 @@ class FlowEngineServiceTest {
             .companyId(company.getId())
             .stepKey("MAIN_MENU")
             .type(StepType.MENU)
-            .messageTemplate("{{servicos_menu}}")
+            .messageTemplate("{{servicos}}")
             .sessionDataKey("servico_opcao")
             .defaultNextStepKey("ACTION_VERIFICAR")
             .transitions(List.of())
