@@ -8,5 +8,6 @@ import java.util.UUID;
 public interface CompanyRepository {
     Optional<Company> findByInstanceName(String instanceName);
     Optional<Company> findById(UUID id);
+    Optional<Company> findByErpEmpresaId(String erpEmpresaId);
     Company save(Company company);
 }

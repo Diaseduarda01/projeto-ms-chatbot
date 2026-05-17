@@ -6,6 +6,7 @@ import ms.chatbot.dias.domain.port.SessionRepository;
 import ms.chatbot.dias.infrastructure.persistence.jpa.SessionJpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,6 +19,16 @@ public class SessionJpaAdapter implements SessionRepository {
     @Override
     public Optional<Session> findByCompanyIdAndPhoneNumber(UUID companyId, String phoneNumber) {
         return jpa.findByCompanyIdAndPhoneNumber(companyId, phoneNumber);
+    }
+
+    @Override
+    public Optional<Session> findById(UUID id) {
+        return jpa.findById(id);
+    }
+
+    @Override
+    public List<Session> findAllByCompanyId(UUID companyId) {
+        return jpa.findAllByCompanyIdOrderByLastActivityDesc(companyId);
     }
 
     @Override

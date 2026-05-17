@@ -8,5 +8,9 @@ public record CompanyRequest(
     @NotBlank String evolutionInstanceName,
     String evolutionApiKey,
     ChannelType channelType,
-    String welcomeStepKey
+    String welcomeStepKey,
+    String erpEmpresaId,
+    String endereco,
+    String horarioFuncionamento,
+    String telefoneContato
 ) {}

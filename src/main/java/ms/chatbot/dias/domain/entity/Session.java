@@ -98,4 +98,12 @@ public class Session {
     public void complete() {
         this.status = SessionStatus.COMPLETED;
     }
+
+    public void handoff() {
+        this.status = SessionStatus.HANDOFF;
+    }
+
+    public void reativar() {
+        this.status = SessionStatus.ACTIVE;
+    }
 }

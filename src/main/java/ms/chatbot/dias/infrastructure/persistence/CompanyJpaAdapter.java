@@ -26,6 +26,11 @@ public class CompanyJpaAdapter implements CompanyRepository {
     }
 
     @Override
+    public Optional<Company> findByErpEmpresaId(String erpEmpresaId) {
+        return jpa.findByErpEmpresaId(erpEmpresaId);
+    }
+
+    @Override
     public Company save(Company company) {
         return jpa.save(company);
     }

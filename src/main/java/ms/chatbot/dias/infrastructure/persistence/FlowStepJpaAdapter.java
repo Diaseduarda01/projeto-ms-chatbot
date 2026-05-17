@@ -27,7 +27,17 @@ public class FlowStepJpaAdapter implements FlowStepRepository {
     }
 
     @Override
+    public Optional<FlowStep> findById(UUID id) {
+        return jpa.findById(id);
+    }
+
+    @Override
     public List<FlowStep> findAllByCompanyId(UUID companyId) {
         return jpa.findAllByCompanyId(companyId);
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        jpa.deleteById(id);
     }
 }

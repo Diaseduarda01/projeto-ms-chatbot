@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface CompanyJpaRepository extends JpaRepository<Company, UUID> {
     Optional<Company> findByEvolutionInstanceName(String instanceName);
+    Optional<Company> findByErpEmpresaId(String erpEmpresaId);
 }

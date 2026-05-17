@@ -33,6 +33,18 @@ public class Company {
     @Builder.Default
     private ChannelType channelType = ChannelType.BAILEYS;
 
+    @Column(name = "erp_empresa_id")
+    private String erpEmpresaId;
+
+    @Column(columnDefinition = "TEXT")
+    private String endereco;
+
+    @Column(name = "horario_funcionamento", columnDefinition = "TEXT")
+    private String horarioFuncionamento;
+
+    @Column(name = "telefone_contato")
+    private String telefoneContato;
+
     @Column(name = "welcome_step_key", nullable = false)
     @Builder.Default
     private String welcomeStepKey = "MAIN_MENU";

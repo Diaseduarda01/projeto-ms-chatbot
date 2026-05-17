@@ -2,6 +2,7 @@ package ms.chatbot.dias.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import ms.chatbot.dias.domain.enums.ActionType;
 import ms.chatbot.dias.domain.enums.InputType;
 import ms.chatbot.dias.domain.enums.StepType;
 
@@ -45,6 +46,10 @@ public class FlowStep {
 
     @Column(name = "default_next_step_key")
     private String defaultNextStepKey;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "action_type", length = 50)
+    private ActionType actionType;
 
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "flow_step_id")

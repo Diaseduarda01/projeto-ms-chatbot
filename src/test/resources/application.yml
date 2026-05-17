@@ -13,3 +13,8 @@ chatbot:
   evolution:
     base-url: http://localhost:9999
     global-api-key: test-key
+  internal-api-key: test-internal-key
+
+erp:
+  base-url: http://localhost:9998
+  internal-api-key: test-erp-key
